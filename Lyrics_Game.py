@@ -56,7 +56,7 @@ def get_song(song_source):
         offset = 0
         limit = 100
         all_tracks = []
-        
+
         # Use the manual endpoint to avoid the 403 error from a 02/11/26 Spotipy bug
         #TODO: When Spotipy is fixed, claen this code up
         while True:
@@ -65,13 +65,13 @@ def get_song(song_source):
                 items = response.get('items', [])
                 if not items:
                     break
-                
+
                 all_tracks.extend(items)
                 for item in items:
                     song_array.append([item["item"]["name"], item["item"]["artists"][0]["name"]])
                 if len(items) < limit:
                     break
-                    
+
                 offset += limit
             else:
                 raise Exception("Error fetching playlist tracks")
@@ -112,11 +112,12 @@ for song_info in song_array:
     else:
         print("Song not found or lyrics could not be retrieved.")
         continue
-        
+    song_title  = song.title.replace("’", "'") #More copyright protection?
+    song_artist = song.artist.replace("’", "'")
 
-    lyric_list = lyrics.replace(":","").split()
-    lyric_set = set(sanitize(lyrics.lower()).split())
-    lyric_count = len(lyric_set)
+    lyric_list   = lyrics.replace(":","").split()
+    lyric_set    = set(sanitize(lyrics.lower()).split())
+    lyric_count  = len(lyric_set)
     total_lyrics = len(lyric_list)
     score = 0
 
@@ -150,20 +151,21 @@ for song_info in song_array:
     Guesses: {len(guessed_set)}
     Time taken: {time.strftime('%H:%M:%S', time.gmtime(clock))}
     Accuracy: {lyric_count}/{len(guessed_set)} ({lyric_count / len(guessed_set) * 100}%)""")
+        
     else:
         print(f"""Nice try!
     Unique Score:  {lyric_count-len(lyric_set)}/{lyric_count} ({(lyric_count-len(lyric_set)) / lyric_count * 100}%)
     Overall Score: {score}/{total_lyrics} ({(score) / total_lyrics * 100}%)
     Guesses: {len(guessed_set)}
     Time taken: {time.strftime('%H:%M:%S', time.gmtime(clock))}""")
-        
+
     duplicate = False
     with open("score.csv", "r", newline='') as csvfile:
         scorereader = csv.reader(csvfile)
         scores = []
         for entry in scorereader:
             current = entry
-            if current[0] == song.title and current[1] == song.artist:
+            if current[0] == song_title and current[1] == song_artist:
                 duplicate = True
                 if int(current[2]) < lyric_count-len(lyric_set):
                     print(f"New record for this song! Previous high score: {current[2]}/{current[3]}")
@@ -174,6 +176,6 @@ for song_info in song_array:
     with open("score.csv", "w", newline='') as csvfile:
         scorewriter = csv.writer(csvfile)
         if not duplicate:
-            scores.append([song.title,song.artist,lyric_count-len(lyric_set),lyric_count])
+            scores.append([song_title,song_artist,lyric_count-len(lyric_set),lyric_count])
         scorewriter.writerows(scores)
     song = None
